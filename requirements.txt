@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+sgp4
+httpx
+opencv-python
+numpy
+hypothesis
+pytest
+pytest-asyncio

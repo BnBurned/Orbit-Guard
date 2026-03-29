@@ -1,0 +1,4 @@
+# file: C:\Users\YİĞİT\Desktop\PROJE\routers\search.py
+# hypothesis_version: 6.151.9
+
+[400, 503, '/api/search', '/catnr', '/name', 'Aranacak uydu ismi', 'json', 'search']

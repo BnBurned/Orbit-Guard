@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>OrbitGuard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{background:#0a0a0f;color:#e0e0e0;font-family:'Segoe UI',system-ui,sans-serif;font-size:13px;height:100vh;overflow:hidden;display:flex;flex-direction:column}
+    #main{display:flex;flex:1;overflow:hidden}
+    /* LEFT */
+    #left{width:220px;min-width:220px;background:#0a0a14;border-right:1px solid #1a1a30;display:flex;flex-direction:column;overflow:hidden}
+    #left h2{padding:10px 12px 6px;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#6060a0;border-bottom:1px solid #1a1a30}
+    #search-box{padding:6px 8px;border-bottom:1px solid #1a1a30}
+    #search-input{width:100%;background:#0d0d20;border:1px solid #1e1e38;border-radius:4px;color:#aaaacc;font-size:11px;padding:5px 8px;outline:none;transition:border-color .15s}
+    #search-input:focus{border-color:#3333aa}
+    #search-input::placeholder{color:#333355}
+    #filter-bar{display:flex;flex-wrap:wrap;gap:3px;padding:6px 8px;border-bottom:1px solid #1a1a30}
+    .fb{padding:3px 7px;background:#111128;border:1px solid #222244;border-radius:3px;color:#8080b0;cursor:pointer;font-size:10px;transition:.15s}
+    .fb.on{background:#222255;color:#aaaaff;border-color:#4444aa}
+    #sat-list{flex:1;overflow-y:auto;padding:2px 0}
+    .si{padding:6px 12px;cursor:pointer;border-left:3px solid transparent;display:flex;flex-direction:column;gap:1px;position:relative}
+    .si:hover{background:#0e0e20}
+    .si.sel{background:#12122a;border-left-color:#5555ff}
+    .si.watched{border-left-color:#ffaa00}
+    .sn{font-weight:600;color:#ccccff;font-size:11px}
+    .sm{color:#555577;font-size:10px}
+    .cb{font-size:9px;font-weight:700;padding:1px 4px;border-radius:2px;align-self:flex-start;margin-top:1px}
+    .c-turkish{background:#0a1a30;color:#4488ff}
+    .c-stations{background:#0a2a1a;color:#44ff88}
+    .c-starlink{background:#1a0a2a;color:#aa44ff}
+    .c-meteor{background:#2a1a0a;color:#ffaa44}
+    .c-debris{background:#2a0a0a;color:#ff5555}
+    .c-other{background:#1a1a1a;color:#888888}
+    .watch-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:1px solid #333355;border-radius:3px;color:#555577;cursor:pointer;font-size:9px;padding:1px 5px;transition:.15s}
+    .watch-btn:hover{border-color:#ffaa00;color:#ffaa00}
+    .watch-btn.active{border-color:#ffaa00;color:#ffaa00;background:#1a1200}
+    /* GLOBE */
+    #globe-wrap{flex:1;position:relative;overflow:hidden}
+    #cv{display:block;width:100%;height:100%;cursor:grab}
+    #cv:active{cursor:grabbing}
+    #hud{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:rgba(0,0,10,.8);border:1px solid #222244;border-radius:5px;padding:3px 14px;font-size:11px;color:#6060a0;pointer-events:none}
+    #orbit-toggle{position:absolute;top:8px;right:12px;background:rgba(0,0,10,.85);border:1px solid #2a2a55;border-radius:5px;padding:4px 12px;font-size:10px;color:#7070bb;cursor:pointer;transition:.15s;z-index:5}
+    #orbit-toggle:hover{background:#111128;color:#aaaaff;border-color:#4444aa}
+    #orbit-toggle.on{color:#44aaff;border-color:#2255aa;background:#0a0a22}
+    #settings-btn{position:absolute;top:8px;right:110px;background:rgba(0,0,10,.85);border:1px solid #2a2a55;border-radius:5px;padding:4px 12px;font-size:10px;color:#7070bb;cursor:pointer;transition:.15s;z-index:5}
+    #settings-btn:hover{background:#111128;color:#aaaaff;border-color:#4444aa}
+    #settings-panel{display:none;position:absolute;top:36px;right:12px;background:rgba(6,6,18,.97);border:1px solid #2a2a55;border-radius:7px;padding:10px 14px;z-index:20;min-width:200px;box-shadow:0 6px 24px rgba(0,0,0,.7)}
+    #settings-panel.show{display:block}
+    .setting-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #111130;font-size:11px;gap:10px}
+    .setting-row:last-child{border-bottom:none}
+    .setting-label{color:#8888aa;white-space:nowrap}
+    .toggle-sw{position:relative;width:32px;height:17px;cursor:pointer;flex-shrink:0}
+    .toggle-sw input{opacity:0;width:0;height:0;position:absolute}
+    .toggle-sw .sl{position:absolute;inset:0;background:#1a1a30;border-radius:17px;transition:.2s}
+    .toggle-sw .sl:before{content:'';position:absolute;width:13px;height:13px;left:2px;bottom:2px;background:#444466;border-radius:50%;transition:.2s}
+    .toggle-sw input:checked+.sl{background:#1a3a88}
+    .toggle-sw input:checked+.sl:before{transform:translateX(15px);background:#44aaff}
+    .brightness-slider{-webkit-appearance:none;appearance:none;width:90px;height:4px;border-radius:2px;background:linear-gradient(to right,#44aaff 0%,#44aaff 60%,#1a1a30 60%);outline:none;cursor:pointer}
+    .brightness-slider::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:#44aaff;cursor:pointer;box-shadow:0 0 4px #44aaff88}
+    .brightness-slider::-moz-range-thumb{width:13px;height:13px;border-radius:50%;background:#44aaff;cursor:pointer;border:none}
+    #tooltip{position:absolute;display:none;background:rgba(5,5,20,.95);border:1px solid #333366;border-radius:5px;padding:7px 11px;font-size:11px;color:#ccccff;pointer-events:none;max-width:210px;line-height:1.6;z-index:10}
+    #statusbar{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(0,0,10,.8);border:1px solid #222244;border-radius:5px;padding:3px 14px;font-size:10px;color:#505080;pointer-events:none}
+    /* RIGHT */
+    #right{width:290px;min-width:290px;background:#0a0a14;border-left:1px solid #1a1a30;display:flex;flex-direction:column;overflow:hidden}
+    /* Detail */
+    #detail{border-bottom:1px solid #1a1a30;padding:10px 12px}
+    #detail h3{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#6060a0;margin-bottom:6px}
+    #dc{color:#9090bb;font-size:11px;line-height:1.7}
+    .dr{display:flex;justify-content:space-between}
+    .dl{color:#555577}.dv{color:#ccccff;font-weight:600}
+    /* Watchlist cards */
+    #watchlist-panel{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+    #wl-header{padding:8px 12px 5px;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#ffaa00;border-bottom:1px solid #1a1a30;position:sticky;top:0;background:#0a0a14;display:flex;justify-content:space-between;align-items:center}
+    #wl-header span{color:#ffaa00}
+    #wl-cards{padding:6px 8px;display:flex;flex-direction:column;gap:6px;overflow-y:auto}
+    .wl-empty{padding:14px 12px;color:#444433;font-size:11px;text-align:center}
+    /* Satellite card */
+    .sat-card{background:#0e0e1e;border:1px solid #1e1e38;border-radius:6px;padding:10px 12px;cursor:pointer;transition:border-color .15s,background .15s;position:relative}
+    .sat-card:hover{background:#121228;border-color:#2a2a55}
+    .sat-card.loading{opacity:.7}
+    .sc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+    .sc-name{font-weight:700;color:#ccccff;font-size:12px;flex:1;margin-right:6px}
+    .sc-remove{background:none;border:none;color:#333355;cursor:pointer;font-size:13px;padding:0;line-height:1;transition:color .15s}
+    .sc-remove:hover{color:#ff5555}
+    .sc-meta{font-size:10px;color:#555577;margin-bottom:6px}
+    .sc-risk-bar{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+    .sc-risk-label{font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;min-width:60px;text-align:center}
+    .sc-score{font-size:10px;color:#888899}
+    .sc-threats-summary{font-size:10px;color:#666688;border-top:1px solid #1a1a30;padding-top:5px;margin-top:4px}
+    .sc-threat-row{display:flex;justify-content:space-between;align-items:center;padding:2px 0}
+    .sc-threat-name{color:#9090aa;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px}
+    .sc-threat-dist{color:#aaaacc;font-size:10px;font-weight:600}
+    .sc-loading{font-size:10px;color:#444466;font-style:italic}
+    .sc-click-hint{font-size:9px;color:#333355;text-align:right;margin-top:3px}
+    /* Popup overlay */
+    #popup-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;align-items:center;justify-content:center}
+    #popup-overlay.show{display:flex}
+    #popup{background:#0d0d1e;border:1px solid #2a2a55;border-radius:8px;width:420px;max-height:80vh;overflow-y:auto;padding:0}
+    #popup-header{padding:12px 16px;border-bottom:1px solid #1a1a30;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#0d0d1e}
+    #popup-title{font-size:13px;font-weight:700;color:#ccccff}
+    #popup-close{background:none;border:none;color:#555577;cursor:pointer;font-size:18px;line-height:1;padding:0}
+    #popup-close:hover{color:#ff5555}
+    #popup-body{padding:12px 16px}
+    .pt-section{margin-bottom:12px}
+    .pt-section h4{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#6060a0;margin-bottom:6px}
+    .pt-card{background:#111128;border:1px solid #1e1e38;border-radius:5px;padding:8px 10px;margin-bottom:6px}
+    .pt-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+    .pt-name{font-size:11px;font-weight:700;color:#ccbbaa}
+    .pt-badge{font-size:9px;font-weight:700;padding:1px 5px;border-radius:2px}
+    .pt-row{display:flex;justify-content:space-between;font-size:10px;padding:1px 0}
+    .pt-label{color:#555577}.pt-val{color:#aaaacc;font-weight:600}
+    .pt-score-bar{height:4px;background:#1a1a30;border-radius:2px;margin-top:5px;overflow:hidden}
+    .pt-score-fill{height:100%;border-radius:2px;transition:width .3s}
+    .risk-CRITICAL{background:#3a0000;color:#ff4444}.risk-HIGH{background:#2a1500;color:#ff8800}
+    .risk-MEDIUM{background:#1a1a00;color:#dddd00}.risk-LOW{background:#001a00;color:#44dd44}
+    /* Terminal */
+    #terminal-btn{padding:5px 14px;background:#0a0a14;border:1px solid #1a1a30;border-top:none;font-size:10px;color:#6060a0;cursor:pointer;text-align:center;transition:.15s;letter-spacing:1px;font-family:'Segoe UI',system-ui,sans-serif}
+    #terminal-btn:hover{background:#0e0e20;color:#aaaaff}
+    #terminal-popup{display:none;position:fixed;bottom:0;right:0;width:500px;height:230px;background:#08081a;border:1px solid #1e1e3a;border-bottom:none;border-right:none;z-index:50;display:flex;flex-direction:column;box-shadow:-4px -4px 20px rgba(0,0,40,.6)}
+    #terminal-popup.hidden{display:none!important}
+    #terminal-header{display:flex;justify-content:space-between;align-items:center;padding:5px 12px;background:#0d0d22;border-bottom:1px solid #1e1e3a;flex-shrink:0}
+    #terminal-header span{font-size:10px;color:#5555aa;font-family:'Segoe UI',monospace;letter-spacing:2px;text-transform:uppercase}
+    #terminal-close{background:none;border:none;color:#333355;cursor:pointer;font-size:14px;padding:0;transition:.15s}
+    #terminal-close:hover{color:#ff5555}
+    #terminal-log{flex:1;overflow-y:auto;padding:6px 12px;font-family:'Courier New',Consolas,monospace;font-size:10px;line-height:1.6;color:#6666aa;background:#08081a}
+    #terminal-log .t-time{color:#2a2a55}
+    #terminal-log .t-info{color:#5588cc}
+    #terminal-log .t-warn{color:#aa8833}
+    #terminal-log .t-err{color:#883333}
+    #terminal-log .t-data{color:#4477aa}
+    #terminal-log .t-calc{color:#6644aa}
+    /* Scrollbar — theme-matched */
+    ::-webkit-scrollbar{width:4px;height:4px}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background:#1e1e3a;border-radius:2px}
+    ::-webkit-scrollbar-thumb:hover{background:#2a2a55}
+  </style>
+</head>
+<body>
+<div id="main">
+  <div id="left">
+    <h2>Nesneler <span id="count" style="color:#444466;font-weight:400"></span></h2>
+    <div id="search-box">
+      <input id="search-input" type="text" placeholder="🔍 İsim veya NORAD ID ara…" autocomplete="off">
+    </div>
+    <div id="filter-bar">
+      <button class="fb on" data-f="ALL">Tümü</button>
+      <button class="fb" data-f="turkish">Türk</button>
+      <button class="fb" data-f="stations">İstasyon</button>
+      <button class="fb" data-f="starlink">Starlink</button>
+      <button class="fb" data-f="meteor">Meteor</button>
+      <button class="fb" data-f="debris">Enkaz</button>
+      <button class="fb" data-f="other">Diğer</button>
+    </div>
+    <div id="sat-list"><div style="padding:10px 12px;color:#444466;font-size:11px">Yükleniyor…</div></div>
+  </div>
+
+  <div id="globe-wrap">
+    <canvas id="cv"></canvas>
+    <div id="hud">OrbitGuard · 3D Uydu Takip</div>
+    <button id="settings-btn">⚙ Ayarlar</button>
+    <button id="orbit-toggle" title="Seçili uydunun yörüngesini göster/gizle">🛸 Yörünge</button>
+    <div id="settings-panel">
+      <div class="setting-row"><span class="setting-label">💡 Parlaklık</span><input type="range" id="sw-brightness" class="brightness-slider" min="0.5" max="3" step="0.1" value="1.0"></div>
+      <div class="setting-row"><span class="setting-label">🎨 Işık Rengi</span><input type="color" id="sw-lightcolor" value="#fff8e8" style="width:32px;height:20px;border:none;border-radius:3px;cursor:pointer;background:none;padding:0"></div>
+      <div class="setting-row"><span class="setting-label">✨ Güneş</span><label class="toggle-sw"><input type="checkbox" id="sw-sun" checked><span class="sl"></span></label></div>
+      <div class="setting-row"><span class="setting-label">🌫 Atmosfer</span><label class="toggle-sw"><input type="checkbox" id="sw-atm" checked><span class="sl"></span></label></div>
+      <div class="setting-row"><span class="setting-label">☁ Bulutlar</span><label class="toggle-sw"><input type="checkbox" id="sw-clouds" checked><span class="sl"></span></label></div>
+      <div class="setting-row"><span class="setting-label">☁ Bulut Yoğunluğu</span><input type="range" id="sw-cloud-opacity" class="brightness-slider" min="0" max="1" step="0.05" value="0.5"></div>
+      <div class="setting-row"><span class="setting-label">⭐ Yıldızlar</span><label class="toggle-sw"><input type="checkbox" id="sw-stars" checked><span class="sl"></span></label></div>
+    </div>
+    <div id="tooltip"></div>
+    <div id="statusbar">Bağlanıyor…</div>
+  </div>
+
+  <div id="right">
+    <div id="detail">
+      <h3>Nesne Detayı</h3>
+      <div id="dc"><span style="color:#333355">Bir nesne seçin</span></div>
+    </div>
+    <div id="watchlist-panel">
+      <div id="wl-header"><span>⭐ Takip Listesi</span><span id="wl-count" style="color:#555544;font-size:10px"></span></div>
+      <div id="wl-cards"><div class="wl-empty">Sol listeden ☆ ile nesne ekleyin</div></div>
+      <button id="terminal-btn">◈ TERMINAL</button>
+    </div>
+  </div>
+</div>
+
+<!-- Terminal popup -->
+<div id="terminal-popup" class="hidden">
+  <div id="terminal-header">
+    <span>◈ ORBITGUARD TERMINAL</span>
+    <button id="terminal-close">✕</button>
+  </div>
+  <div id="terminal-log"></div>
+</div>
+
+<!-- Threat popup -->
+<div id="popup-overlay">
+  <div id="popup">
+    <div id="popup-header">
+      <span id="popup-title">Tehdit Analizi</span>
+      <button id="popup-close">✕</button>
+    </div>
+    <div id="popup-body"></div>
+  </div>
+</div>
+
+<script>
+const BASE = 'http://127.0.0.1:8000';
+
+const CAT_CSS = {
+  turkish:'#4488ff', stations:'#44ff88', starlink:'#aa44ff',
+  meteor:'#ffaa44',  debris:'#ff5555',   other:'#888888',
+};
+const CAT_LABEL = {
+  turkish:'Türk Uydusu', stations:'Uzay İstasyonu',
+  starlink:'Starlink', meteor:'Meteor', debris:'Enkaz', other:'Diğer'
+};
+
+// ── Request Queue — max 1 request per 35s per URL, auto-retry on 429 ─────────
+const _reqQueue = [];
+const _reqLast  = {};   // url → last sent timestamp
+const _QUEUE_INTERVAL = 35000; // ms between requests to same URL
+let _queueRunning = false;
+
+function _queueProcess() {
+  if(_queueRunning) return;
+  _queueRunning = true;
+  (async () => {
+    while(_reqQueue.length > 0) {
+      const item = _reqQueue[0];
+      const now = Date.now();
+      const last = _reqLast[item.url] || 0;
+      const wait = Math.max(0, last + _QUEUE_INTERVAL - now);
+      if(wait > 0) await new Promise(r=>setTimeout(r, wait));
+      _reqQueue.shift();
+      _reqLast[item.url] = Date.now();
+      try {
+        const ctrl = new AbortController();
+        const t = setTimeout(()=>ctrl.abort(), item.ms);
+        const r = await fetch(item.url, {signal:ctrl.signal});
+        clearTimeout(t);
+        if(r.status === 429) {
+          // Re-queue at front after 35s
+          console.warn('429 — requeueing in 35s:', item.url);
+          _reqLast[item.url] = Date.now(); // enforce full wait
+          _reqQueue.unshift(item);
+          await new Promise(r=>setTimeout(r, _QUEUE_INTERVAL));
+          continue;
+        }
+        if(!r.ok) { item.reject(new Error(`HTTP ${r.status}`)); continue; }
+        item.resolve(await r.json());
+      } catch(e) {
+        item.reject(e);
+      }
+    }
+    _queueRunning = false;
+  })();
+}
+
+async function apiFetch(url, ms=15000) {
+  return new Promise((resolve, reject) => {
+    _reqQueue.push({url, ms, resolve, reject});
+    _queueProcess();
+  }).catch(e => { console.warn('API:', url, e.message); return null; });
+}
+
+function makeSpriteTex(color, size=64){
+  const c=document.createElement('canvas'); c.width=c.height=size;
+  const ctx=c.getContext('2d'), r=size/2;
+  const inner=r*0.55, ring=r*0.72;
+  // Black outline
+  ctx.beginPath(); ctx.arc(r,r,ring,0,Math.PI*2);
+  ctx.fillStyle='rgba(0,0,0,0.85)'; ctx.fill();
+  // Solid color disc — sharp, no gradient
+  ctx.beginPath(); ctx.arc(r,r,inner,0,Math.PI*2);
+  ctx.fillStyle=color; ctx.fill();
+  return new THREE.CanvasTexture(c);
+}
+
+function makeSelTex(color, size=64){
+  // Selected: same shape, white outline instead of black
+  const c=document.createElement('canvas'); c.width=c.height=size;
+  const ctx=c.getContext('2d'), r=size/2;
+  const inner=r*0.55, ring=r*0.72;
+  // White outline
+  ctx.beginPath(); ctx.arc(r,r,ring,0,Math.PI*2);
+  ctx.fillStyle='rgba(255,255,255,0.95)'; ctx.fill();
+  // Solid color disc
+  ctx.beginPath(); ctx.arc(r,r,inner,0,Math.PI*2);
+  ctx.fillStyle=color; ctx.fill();
+  return new THREE.CanvasTexture(c);
+}
+
+const SMATS={}, SMAT_SEL_MAP={};
+Object.entries(CAT_CSS).forEach(([k,v])=>{
+  SMATS[k]=new THREE.SpriteMaterial({map:makeSpriteTex(v),transparent:true,depthWrite:false});
+  SMAT_SEL_MAP[k]=new THREE.SpriteMaterial({map:makeSelTex(v),transparent:true,depthWrite:false});
+});
+const SMAT_WATCH=new THREE.SpriteMaterial({map:makeSpriteTex('#ffaa00'),transparent:true,depthWrite:false});
+const SMAT_WATCH_SEL=new THREE.SpriteMaterial({map:makeSelTex('#ffaa00'),transparent:true,depthWrite:false});
+
+// ── localStorage settings ────────────────────────────────────────────────────
+const LS_KEY = 'orbitguard_settings';
+
+function _saveSetting(key, value) {
+  try {
+    const s = JSON.parse(localStorage.getItem(LS_KEY)||'{}');
+    s[key] = value;
+    localStorage.setItem(LS_KEY, JSON.stringify(s));
+  } catch(e){}
+}
+
+function _loadSettings(globe) {
+  try {
+    const s = JSON.parse(localStorage.getItem(LS_KEY)||'{}');
+
+    // Brightness
+    if(s['sw-brightness']!=null){
+      const v=parseFloat(s['sw-brightness']);
+      const el=document.getElementById('sw-brightness');
+      if(el){ el.value=v; el.dispatchEvent(new Event('input')); }
+    }
+    // Light color
+    if(s['sw-lightcolor']){
+      const el=document.getElementById('sw-lightcolor');
+      if(el){ el.value=s['sw-lightcolor']; el.dispatchEvent(new Event('input')); }
+    }
+    // Sun
+    if(s['sw-sun']!=null){
+      const el=document.getElementById('sw-sun');
+      if(el){ el.checked=s['sw-sun']; el.dispatchEvent(new Event('change')); }
+    }
+    // Atmosphere
+    if(s['sw-atm']!=null){
+      const el=document.getElementById('sw-atm');
+      if(el){ el.checked=s['sw-atm']; el.dispatchEvent(new Event('change')); }
+    }
+    // Clouds toggle
+    if(s['sw-clouds']!=null){
+      const el=document.getElementById('sw-clouds');
+      if(el){ el.checked=s['sw-clouds']; el.dispatchEvent(new Event('change')); }
+    }
+    // Cloud opacity
+    if(s['sw-cloud-opacity']!=null){
+      const v=parseFloat(s['sw-cloud-opacity']);
+      const el=document.getElementById('sw-cloud-opacity');
+      if(el){ el.value=v; el.dispatchEvent(new Event('input')); }
+    }
+    // Stars
+    if(s['sw-stars']!=null){
+      const el=document.getElementById('sw-stars');
+      if(el){ el.checked=s['sw-stars']; el.dispatchEvent(new Event('change')); }
+    }
+  } catch(e){}
+}
+
+// ── Terminal Logger ──────────────────────────────────────────────────────────
+const Terminal = {
+  _el: null,
+  _open: false,
+  init() {
+    this._el = document.getElementById('terminal-log');
+    const btn = document.getElementById('terminal-btn');
+    const popup = document.getElementById('terminal-popup');
+    const close = document.getElementById('terminal-close');
+    btn.addEventListener('click', () => {
+      this._open = !this._open;
+      popup.classList.toggle('hidden', !this._open);
+      btn.textContent = this._open ? '◈ TERMINAL ▲' : '◈ TERMINAL';
+    });
+    close.addEventListener('click', () => {
+      this._open = false;
+      popup.classList.add('hidden');
+      btn.textContent = '◈ TERMINAL';
+    });
+    this.log('info', 'OrbitGuard Terminal başlatıldı');
+    this.log('info', `Sistem: ${navigator.userAgent.split(')')[0].split('(')[1]||'Browser'}`);
+  },
+  _append(cls, msg) {
+    if (!this._el) return;
+    const now = new Date().toLocaleTimeString('tr-TR', {hour12:false});
+    const line = document.createElement('div');
+    line.innerHTML = `<span class="t-time">[${now}]</span> <span class="${cls}">${msg}</span>`;
+    this._el.appendChild(line);
+    // Keep last 200 lines
+    while (this._el.children.length > 200) this._el.removeChild(this._el.firstChild);
+    this._el.scrollTop = this._el.scrollHeight;
+  },
+  log(type, msg)  { this._append(`t-${type}`, msg); },
+  info(msg)       { this._append('t-info', msg); },
+  warn(msg)       { this._append('t-warn', '⚠ ' + msg); },
+  err(msg)        { this._append('t-err',  '✗ ' + msg); },
+  data(msg)       { this._append('t-data', msg); },
+  calc(msg)       { this._append('t-calc', '∑ ' + msg); },
+};
+
+// ── Watchlist localStorage ───────────────────────────────────────────────────
+const WL_KEY = 'orbitguard_watchlist';
+function _saveWatchlist(watchSet) {
+  try { localStorage.setItem(WL_KEY, JSON.stringify([...watchSet])); } catch(e){}
+}
+function _loadWatchlist() {
+  try { return new Set(JSON.parse(localStorage.getItem(WL_KEY)||'[]')); } catch(e){ return new Set(); }
+}
+
+// ── Globe ────────────────────────────────────────────────────────────────────
+class Globe {
+  constructor(canvas){
+    this.canvas=canvas; this.sprites={}; this.watchSet=new Set();
+    this._moved=false; this._prev={x:0,y:0};
+    this._sph={theta:0.3,phi:1.2,r:2.8};
+    this._lastInteract=Date.now();
+    this._autoRotSpeed=0.0004;
+    this._orbitLines={}; this._showOrbits=false;
+    this._orbitGroup=null; this._selectedOrbit=null;
+    this._init(); this._bindEvents(); this._loop();
+  }
+  _init(){
+    const w=this.canvas.clientWidth,h=this.canvas.clientHeight;
+    this.renderer=new THREE.WebGLRenderer({canvas:this.canvas,antialias:true,alpha:false,powerPreference:'high-performance'});
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio,3));  // up to 3x for retina
+    this.renderer.setSize(w,h);
+    this.renderer.setClearColor(0x000008);
+    this.renderer.shadowMap.enabled=false;
+    this.scene=new THREE.Scene();
+    this.camera=new THREE.PerspectiveCamera(42,w/h,0.01,500);
+    this._camUpdate();
+
+    // Lighting — sun + subtle fill + ambient
+    const sun=new THREE.DirectionalLight(0xfff8e8,1.6); sun.position.set(5,3,5); this.scene.add(sun);
+    const fill=new THREE.DirectionalLight(0x334488,0.25); fill.position.set(-5,-2,-3); this.scene.add(fill);
+    this._ambientLight=new THREE.AmbientLight(0xffffff,0.6); this.scene.add(this._ambientLight);
+    this._sunLight=sun; this._fillLight=fill;
+
+    const loader=new THREE.TextureLoader();
+    // Solar System Scope 8K textures
+    const earthTex    = loader.load('/frontend/earth_day.jpg');
+    const normalTex   = loader.load('/frontend/earth_normal.jpg');
+    const specularTex = loader.load('/frontend/earth_specular.jpg');
+    const nightTex    = loader.load('/frontend/earth_night.jpg');
+
+    // Globe — 256-segment sphere with all 8K maps
+    this.globe=new THREE.Mesh(
+      new THREE.SphereGeometry(1,256,256),
+      new THREE.MeshPhongMaterial({
+        map:         earthTex,
+        normalMap:   normalTex,
+        normalScale: new THREE.Vector2(0.85,0.85),
+        specularMap: specularTex,
+        specular:    new THREE.Color(0x4466bb),
+        shininess:   40,
+        emissiveMap: nightTex,
+        emissive:    new THREE.Color(0xffcc88),
+        emissiveIntensity: 0.0,
+      })
+    );
+    this.scene.add(this.globe);
+    this._globeMat=this.globe.material;
+    this._glbModel=null;
+
+    // Clouds — Solar System Scope 8K cloud map
+    const cloudTex=loader.load('/frontend/earth_clouds.jpg');
+    this.clouds=new THREE.Mesh(
+      new THREE.SphereGeometry(1.010,128,128),
+      new THREE.MeshPhongMaterial({map:cloudTex,transparent:true,opacity:0.5,depthWrite:false,shininess:5,alphaTest:0.1})
+    );
+    this.scene.add(this.clouds);
+
+    // Atmosphere — multi-layer glow
+    const atm1=new THREE.Mesh(new THREE.SphereGeometry(1.04,64,64),
+      new THREE.MeshBasicMaterial({color:0x1166dd,transparent:true,opacity:0.07,side:THREE.BackSide}));
+    const atm2=new THREE.Mesh(new THREE.SphereGeometry(1.10,64,64),
+      new THREE.MeshBasicMaterial({color:0x0033aa,transparent:true,opacity:0.04,side:THREE.BackSide}));
+    this.scene.add(atm1); this.scene.add(atm2);
+    this._atmMeshes=[atm1,atm2];
+
+    // Sun sprite — glowing point at light source position, sits among stars
+    const sc=document.createElement('canvas'); sc.width=sc.height=256;
+    const sctx=sc.getContext('2d');
+    const sg=sctx.createRadialGradient(128,128,0,128,128,128);
+    sg.addColorStop(0,  'rgba(255,255,240,1)');
+    sg.addColorStop(0.08,'rgba(255,240,180,1)');
+    sg.addColorStop(0.2, 'rgba(255,200,80,0.85)');
+    sg.addColorStop(0.4, 'rgba(255,140,20,0.35)');
+    sg.addColorStop(0.7, 'rgba(255,80,0,0.1)');
+    sg.addColorStop(1,   'rgba(0,0,0,0)');
+    sctx.fillStyle=sg; sctx.fillRect(0,0,256,256);
+    this._sunSprite=new THREE.Sprite(new THREE.SpriteMaterial({
+      map:new THREE.CanvasTexture(sc),transparent:true,depthWrite:false,
+      blending:THREE.AdditiveBlending,depthTest:false,
+    }));
+    this._sunSprite.scale.set(4,4,4);
+    this._sunDir=new THREE.Vector3(5,3,5).normalize();
+    this._sunSprite.position.copy(this._sunDir).multiplyScalar(85);
+    this.scene.add(this._sunSprite);
+
+    // Stars — two layers for depth
+    this._starMeshes=[];
+    this._starMeshes.push(this._makeStars(4000,90,110,0.14,0.9));
+    this._starMeshes.push(this._makeStars(1500,60,80,0.08,0.5));
+
+    // Orbit group — always in scene, individual rings control visibility
+    this._orbitGroup=new THREE.Group();
+    this._orbitGroup.visible=true;
+    this.scene.add(this._orbitGroup);
+
+    // Sprite group
+    this.spriteGroup=new THREE.Group(); this.scene.add(this.spriteGroup);
+    this.raycaster=new THREE.Raycaster(); this.mouse=new THREE.Vector2(-9,-9);
+    window.addEventListener('resize',()=>this._onResize());
+
+    // Orbit toggle button
+    const btn=document.getElementById('orbit-toggle');
+    btn.addEventListener('click',()=>{
+      this._showOrbits=!this._showOrbits;
+      btn.classList.toggle('on',this._showOrbits);
+      if(this._selectedOrbit) this._selectedOrbit.visible=this._showOrbits;
+    });
+
+    // Settings panel
+    const sbtn=document.getElementById('settings-btn');
+    const spanel=document.getElementById('settings-panel');
+    sbtn.addEventListener('click',e=>{e.stopPropagation();spanel.classList.toggle('show');});
+    document.addEventListener('click',()=>spanel.classList.remove('show'));
+    spanel.addEventListener('click',e=>e.stopPropagation());
+
+    // Brightness slider — controls ambient + sun intensity
+    const bslider=document.getElementById('sw-brightness');
+    bslider.addEventListener('input',()=>{
+      const v=parseFloat(bslider.value);
+      const pct=((v-0.5)/(3-0.5))*100;
+      bslider.style.background=`linear-gradient(to right,#44aaff 0%,#44aaff ${pct}%,#1a1a30 ${pct}%)`;
+      this._ambientLight.intensity=v*0.6;
+      this._sunLight.intensity=v*1.6;
+      this._fillLight.intensity=v*0.25;
+      _saveSetting('sw-brightness',v);
+    });
+
+    // Light color picker
+    document.getElementById('sw-lightcolor').addEventListener('input',e=>{
+      const c=new THREE.Color(e.target.value);
+      if(this._sunLight)  this._sunLight.color.set(c);
+      if(this._ambientLight) this._ambientLight.color.set(c);
+      _saveSetting('sw-lightcolor',e.target.value);
+    });
+
+    // Sun toggle
+    document.getElementById('sw-sun').addEventListener('change',e=>{
+      if(this._sunSprite) this._sunSprite.visible=e.target.checked;
+      _saveSetting('sw-sun',e.target.checked);
+    });
+    // Atmosphere toggle
+    document.getElementById('sw-atm').addEventListener('change',e=>{
+      if(this._atmMeshes) this._atmMeshes.forEach(m=>m.visible=e.target.checked);
+      _saveSetting('sw-atm',e.target.checked);
+    });
+    // Clouds toggle
+    document.getElementById('sw-clouds').addEventListener('change',e=>{
+      if(this.clouds) this.clouds.visible=e.target.checked;
+      _saveSetting('sw-clouds',e.target.checked);
+    });
+    // Cloud opacity slider
+    const cslider=document.getElementById('sw-cloud-opacity');
+    cslider.addEventListener('input',()=>{
+      const v=parseFloat(cslider.value);
+      const pct=v*100;
+      cslider.style.background=`linear-gradient(to right,#44aaff 0%,#44aaff ${pct}%,#1a1a30 ${pct}%)`;
+      if(this.clouds) this.clouds.material.opacity=v;
+      _saveSetting('sw-cloud-opacity',v);
+    });
+    // Stars toggle
+    document.getElementById('sw-stars').addEventListener('change',e=>{
+      if(this._starMeshes) this._starMeshes.forEach(m=>m.visible=e.target.checked);
+      _saveSetting('sw-stars',e.target.checked);
+    });
+
+    // Load saved settings on startup
+    _loadSettings(this);
+  }
+  _makeStars(count,rMin,rMax,size,opacity){
+    const verts=[];
+    for(let i=0;i<count;i++){
+      const r=rMin+Math.random()*(rMax-rMin),t=Math.random()*Math.PI*2,p=Math.acos(2*Math.random()-1);
+      verts.push(r*Math.sin(p)*Math.cos(t),r*Math.sin(p)*Math.sin(t),r*Math.cos(p));
+    }
+    const g=new THREE.BufferGeometry();
+    g.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+    const pts=new THREE.Points(g,new THREE.PointsMaterial({color:0xffffff,size,transparent:true,opacity}));
+    this.scene.add(pts);
+    return pts;
+  }
+  _geo(lat,lon,altKm){
+    const R=6371,r=1+(altKm/R)*0.35,phi=(90-lat)*Math.PI/180,theta=(lon+180)*Math.PI/180;
+    return new THREE.Vector3(-r*Math.sin(phi)*Math.cos(theta),r*Math.cos(phi),r*Math.sin(phi)*Math.sin(theta));
+  }
+  _makeOrbitRing(altKm, incDeg, color, opacity=0.7){
+    // Fallback — simple tilted circle (used when orbital elements not available)
+    const R=6371, r=1+(altKm/R)*0.35;
+    const pts=[];
+    for(let i=0;i<=128;i++){
+      const a=i/128*Math.PI*2;
+      pts.push(new THREE.Vector3(r*Math.cos(a),0,r*Math.sin(a)));
+    }
+    const geo=new THREE.BufferGeometry().setFromPoints(pts);
+    const mat=new THREE.LineBasicMaterial({color,transparent:true,opacity});
+    const line=new THREE.Line(geo,mat);
+    line.rotation.x=THREE.MathUtils.degToRad(incDeg);
+    return line;
+  }
+
+  _makeRealOrbit(elements, color, opacity=0.85){
+    /**
+     * Draws a true Keplerian orbit using all 6 orbital elements.
+     * elements: {perigee_km, apogee_km, inclination_deg, raan_deg, arg_perigee_deg, eccentricity}
+     *
+     * Steps:
+     * 1. Build ellipse in orbital plane (perifocal frame)
+     * 2. Rotate by argument of perigee (ω) around Z
+     * 3. Rotate by inclination (i) around X
+     * 4. Rotate by RAAN (Ω) around Z
+     */
+    const R=6371;
+    const {perigee_km=400, apogee_km=400, inclination_deg=0,
+           raan_deg=0, arg_perigee_deg=0, eccentricity=0} = elements;
+
+    const rp = 1 + (perigee_km/R)*0.35;  // perigee radius (scene units)
+    const ra = 1 + (apogee_km/R)*0.35;   // apogee radius
+    const a  = (rp + ra) / 2;            // semi-major axis
+    const e  = Math.min(eccentricity, 0.99);
+    const b  = a * Math.sqrt(1 - e*e);   // semi-minor axis
+    const c  = a * e;                    // center offset (focus distance)
+
+    const N = 256;
+    const pts = [];
+    for(let i=0;i<=N;i++){
+      const nu = (i/N)*Math.PI*2; // true anomaly
+      // Ellipse in perifocal frame: x along perigee direction, y perpendicular
+      const px = a*Math.cos(nu) - c;
+      const py = b*Math.sin(nu);
+      pts.push(new THREE.Vector3(px, py, 0));
+    }
+
+    const geo = new THREE.BufferGeometry().setFromPoints(pts);
+    const mat = new THREE.LineBasicMaterial({color, transparent:true, opacity});
+    const line = new THREE.Line(geo, mat);
+
+    // Apply 3 rotations: ω (arg of perigee), i (inclination), Ω (RAAN)
+    // Order: first rotate by ω around Z, then i around X, then Ω around Z
+    const omega = THREE.MathUtils.degToRad(arg_perigee_deg);
+    const inc   = THREE.MathUtils.degToRad(inclination_deg);
+    const raan  = THREE.MathUtils.degToRad(raan_deg);
+
+    // Build rotation matrix: Rz(RAAN) * Rx(i) * Rz(ω)
+    const mOmega = new THREE.Matrix4().makeRotationZ(omega);
+    const mInc   = new THREE.Matrix4().makeRotationX(inc);
+    const mRaan  = new THREE.Matrix4().makeRotationZ(raan);
+    const m = new THREE.Matrix4().multiplyMatrices(mRaan, new THREE.Matrix4().multiplyMatrices(mInc, mOmega));
+    line.applyMatrix4(m);
+
+    return line;
+  }
+  setObjects(objects){
+    while(this.spriteGroup.children.length) this.spriteGroup.remove(this.spriteGroup.children[0]);
+    this.sprites={};
+    // Clear all orbit lines
+    while(this._orbitGroup.children.length) this._orbitGroup.remove(this._orbitGroup.children[0]);
+    this._orbitLines={};
+    this._selectedOrbit=null;
+
+    objects.forEach(o=>{
+      const isWatch=this.watchSet.has(o.norad_id);
+      const mat=(isWatch?SMAT_WATCH:(SMATS[o.category]||SMATS.other)).clone();
+      const sp=new THREE.Sprite(mat);
+      sp.position.copy(this._geo(o.lat,o.lon,o.alt_km));
+      const sz=isWatch?0.065:(o.category==='turkish'?0.05:o.category==='stations'?0.045:0.024);
+      sp.scale.set(sz,sz,sz); sp.userData=o;
+      this.spriteGroup.add(sp); this.sprites[o.norad_id]=sp;
+
+      // Pre-build orbit ring for every object (hidden by default)
+      const catColor={turkish:0x4488ff,stations:0x44ff88,meteor:0xffaa44,starlink:0xaa44ff,debris:0xff5555,other:0x888888}[o.category]||0x666666;
+      const inc=o.inclination||0;
+      const ring=this._makeOrbitRing(o.alt_km,inc,catColor,0.7);
+      ring.visible=false;
+      this._orbitGroup.add(ring);
+      this._orbitLines[o.norad_id]=ring;
+    });
+  }
+  applyFilter(visSet){
+    Object.values(this.sprites).forEach(s=>{s.visible=!visSet||visSet.has(s.userData.norad_id);});
+    // Don't touch orbit lines here — they're controlled by selection
+  }
+  showOrbitFor(noradId, trackPoints){
+    // Hide/remove previous orbit
+    if(this._selectedOrbit){
+      this._orbitGroup.remove(this._selectedOrbit);
+      this._selectedOrbit=null;
+    }
+    if(noradId==null) return;
+
+    const obj=Object.values(this.sprites).find(s=>s.userData.norad_id===noradId);
+    const cat=obj?obj.userData.category:'other';
+    const hexColor={turkish:0x4488ff,stations:0x44ff88,meteor:0xffaa44,starlink:0xaa44ff,debris:0xff5555,other:0x888888}[cat]||0x888888;
+
+    const group=new THREE.Group();
+
+    if(trackPoints && trackPoints.length > 1){
+      const R=6371;
+      // Split into segments at antimeridian crossings
+      const segments=[];
+      let seg=[];
+      for(let i=0;i<trackPoints.length;i++){
+        const p=trackPoints[i];
+        if(i>0 && Math.abs(p.lon-trackPoints[i-1].lon)>180){
+          if(seg.length>1) segments.push(seg);
+          seg=[];
+        }
+        const r=1+(p.alt_km/R)*0.35;
+        const phi=(90-p.lat)*Math.PI/180;
+        const theta=(p.lon+180)*Math.PI/180;
+        seg.push(new THREE.Vector3(
+          -r*Math.sin(phi)*Math.cos(theta),
+           r*Math.cos(phi),
+           r*Math.sin(phi)*Math.sin(theta)
+        ));
+      }
+      if(seg.length>1) segments.push(seg);
+
+      const mat=new THREE.MeshBasicMaterial({color:hexColor,transparent:true,opacity:0.9,depthWrite:false});
+
+      segments.forEach(pts=>{
+        if(pts.length<2) return;
+        try {
+          // TubeGeometry for thick visible lines at any distance
+          const curve=new THREE.CatmullRomCurve3(pts);
+          const tube=new THREE.TubeGeometry(curve, pts.length*2, 0.004, 6, false);
+          group.add(new THREE.Mesh(tube, mat));
+        } catch(e){
+          // Fallback to line if tube fails
+          const geo=new THREE.BufferGeometry().setFromPoints(pts);
+          group.add(new THREE.Line(geo, new THREE.LineBasicMaterial({color:hexColor,transparent:true,opacity:0.9})));
+        }
+      });
+    } else {
+      // Fallback — simple tilted circle as tube
+      const alt=obj?obj.userData.alt_km:400;
+      const inc=obj?obj.userData.inclination||0:0;
+      const R=6371, r=1+(alt/R)*0.35;
+      const pts=[];
+      for(let i=0;i<=128;i++){
+        const a=i/128*Math.PI*2;
+        pts.push(new THREE.Vector3(r*Math.cos(a),0,r*Math.sin(a)));
+      }
+      const curve=new THREE.CatmullRomCurve3(pts,true);
+      const tube=new THREE.TubeGeometry(curve,256,0.004,6,true);
+      const mat=new THREE.MeshBasicMaterial({color:hexColor,transparent:true,opacity:0.8,depthWrite:false});
+      const mesh=new THREE.Mesh(tube,mat);
+      mesh.rotation.x=THREE.MathUtils.degToRad(inc);
+      group.add(mesh);
+    }
+
+    group.visible=this._showOrbits;
+    this._orbitGroup.add(group);
+    this._selectedOrbit=group;
+  }
+  highlight(noradId){
+    // Remove old selection ring
+    if(this._selRing){ this.scene.remove(this._selRing); this._selRing=null; this._selRingTarget=null; }
+
+    Object.values(this.sprites).forEach(s=>{
+      const o=s.userData, isWatch=this.watchSet.has(o.norad_id);
+      const isSel=o.norad_id===noradId;
+      if(isSel){
+        s.material=(isWatch?SMAT_WATCH_SEL:(SMAT_SEL_MAP[o.category]||SMAT_SEL_MAP.other)).clone();
+      } else {
+        s.material=(isWatch?SMAT_WATCH:(SMATS[o.category]||SMATS.other)).clone();
+      }
+      const sz=isSel?0.09:isWatch?0.065:(o.category==='turkish'?0.05:o.category==='stations'?0.045:0.024);
+      s.scale.set(sz,sz,sz);
+    });
+    this.showOrbitFor(noradId, null);
+  }
+  setWatchSet(ws){ this.watchSet=ws; }
+
+  flyTo(lat, lon, altKm){
+    // Smoothly animate camera to look at the satellite's position
+    const R=6371;
+    const r=1+(altKm/R)*0.35;
+    const phi=(90-lat)*Math.PI/180;
+    const theta=(lon+180)*Math.PI/180;
+    // Convert to spherical camera angles
+    const targetTheta=-theta+Math.PI; // flip for camera convention
+    const targetPhi=phi;
+    const targetR=Math.max(1.8, r+0.8); // zoom in but not too close
+
+    // Animate over ~60 frames
+    const startTheta=this._sph.theta;
+    const startPhi=this._sph.phi;
+    const startR=this._sph.r;
+    let frame=0;
+    const total=50;
+    const animate=()=>{
+      if(frame>=total) return;
+      frame++;
+      const t=1-Math.pow(1-frame/total,3); // ease-out cubic
+      // Shortest path for theta
+      let dTheta=targetTheta-startTheta;
+      while(dTheta>Math.PI) dTheta-=Math.PI*2;
+      while(dTheta<-Math.PI) dTheta+=Math.PI*2;
+      this._sph.theta=startTheta+dTheta*t;
+      this._sph.phi=startPhi+(targetPhi-startPhi)*t;
+      this._sph.r=startR+(targetR-startR)*t;
+      this._camUpdate();
+      requestAnimationFrame(animate);
+    };
+    animate();
+  }
+  _camUpdate(){
+    const{theta,phi,r}=this._sph;
+    this.camera.position.set(r*Math.sin(phi)*Math.cos(theta),r*Math.cos(phi),r*Math.sin(phi)*Math.sin(theta));
+    this.camera.lookAt(0,0,0);
+  }
+  _touch(){this._lastInteract=Date.now();}
+  _bindEvents(){
+    const c=this.canvas;
+    c.addEventListener('mousedown',e=>{this._moved=false;this._prev={x:e.clientX,y:e.clientY};this._touch();});
+    c.addEventListener('mousemove',e=>{
+      const rect=c.getBoundingClientRect();
+      this.mouse.set(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);
+      if(e.buttons===1){
+        const dx=e.clientX-this._prev.x,dy=e.clientY-this._prev.y;
+        if(Math.abs(dx)+Math.abs(dy)>2)this._moved=true;
+        this._sph.theta+=dx*0.005;
+        this._sph.phi=Math.max(0.05,Math.min(Math.PI-0.05,this._sph.phi-dy*0.005));
+        this._prev={x:e.clientX,y:e.clientY};
+        this._camUpdate(); this._touch();
+      }
+    });
+    c.addEventListener('mouseup',()=>{if(!this._moved)this._onClick();});
+    c.addEventListener('wheel',e=>{
+      e.preventDefault();
+      this._sph.r=Math.max(1.15,Math.min(12,this._sph.r+e.deltaY*0.004));
+      this._camUpdate(); this._touch();
+    },{passive:false});
+    // Touch support
+    c.addEventListener('touchstart',e=>{this._moved=false;this._prev={x:e.touches[0].clientX,y:e.touches[0].clientY};this._touch();},{passive:true});
+    c.addEventListener('touchmove',e=>{
+      const dx=e.touches[0].clientX-this._prev.x,dy=e.touches[0].clientY-this._prev.y;
+      if(Math.abs(dx)+Math.abs(dy)>2)this._moved=true;
+      this._sph.theta+=dx*0.005;
+      this._sph.phi=Math.max(0.05,Math.min(Math.PI-0.05,this._sph.phi-dy*0.005));
+      this._prev={x:e.touches[0].clientX,y:e.touches[0].clientY};
+      this._camUpdate(); this._touch();
+    },{passive:true});
+  }
+  _onClick(){
+    const vis=this.spriteGroup.children.filter(s=>s.visible); if(!vis.length)return;
+    this.raycaster.setFromCamera(this.mouse,this.camera);
+    const hits=this.raycaster.intersectObjects(vis); if(!hits.length)return;
+    const obj=hits[0].object.userData; if(obj&&window.app)window.app.onSelect(obj);
+  }
+  _onResize(){
+    const w=this.canvas.clientWidth,h=this.canvas.clientHeight;
+    this.camera.aspect=w/h; this.camera.updateProjectionMatrix();
+    this.renderer.setSize(w,h);
+  }
+  _loop(){
+    requestAnimationFrame(()=>this._loop());
+    const idle=(Date.now()-this._lastInteract)/1000;
+    // Auto-rotate after 15s idle — smooth ease-in
+    if(idle>15){
+      const t=Math.min((idle-15)/5,1); // 5s ease-in
+      this._sph.theta+=this._autoRotSpeed*t;
+      this._camUpdate();
+    }
+    // Earth & clouds always rotate slowly
+    if(this.globe) this.globe.rotation.y+=0.00004;
+    if(this.clouds) this.clouds.rotation.y+=0.000048;
+
+    // Sun slowly orbits — update sprite position to match light direction
+    const sunAngle=Date.now()*0.000004;
+    const sx=Math.cos(sunAngle)*85, sz=Math.sin(sunAngle)*85, sy=18;
+    if(this._sunSprite) this._sunSprite.position.set(sx,sy,sz);
+    if(this._sunLight)  this._sunLight.position.set(sx/85*5,sy/85*3,sz/85*5);
+
+    // City lights glow on night side — emissive intensity inversely proportional to ambient
+    if(this._globeMat){
+      const brightness=this._ambientLight?this._ambientLight.intensity/0.6:1;
+      this._globeMat.emissiveIntensity=Math.max(0,0.6-brightness*0.5);
+    }
+
+    // Tooltip
+    const tip=document.getElementById('tooltip');
+    const vis=this.spriteGroup.children.filter(s=>s.visible);
+    if(vis.length){
+      this.raycaster.setFromCamera(this.mouse,this.camera);
+      const hits=this.raycaster.intersectObjects(vis);
+      if(hits.length){
+        const o=hits[0].object.userData,rect=this.canvas.getBoundingClientRect();
+        tip.style.display='block';
+        tip.style.left=((this.mouse.x*0.5+0.5)*rect.width+14)+'px';
+        tip.style.top=((-this.mouse.y*0.5+0.5)*rect.height-10)+'px';
+        tip.innerHTML=`<b>${o.name}</b><br>NORAD ${o.norad_id}<br>${CAT_LABEL[o.category]||o.category}<br>${o.alt_km} km`;
+      } else tip.style.display='none';
+    }
+    this.renderer.render(this.scene,this.camera);
+  }
+}
+
+// ── Panel ────────────────────────────────────────────────────────────────────
+class Panel {
+  constructor(){
+    this.all=[]; this.filter='ALL'; this.riskMap={}; this.query='';
+    document.querySelectorAll('.fb').forEach(b=>b.addEventListener('click',()=>{
+      document.querySelectorAll('.fb').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on'); this.filter=b.dataset.f; this.render();
+      if(window.app)window.app.applyFilter();
+    }));
+    // Search box
+    const inp=document.getElementById('search-input');
+    if(inp) inp.addEventListener('input',()=>{
+      this.query=inp.value.trim().toLowerCase();
+      this.render();
+      if(window.app)window.app.applyFilter();
+    });
+  }
+  setData(objects){this.all=objects;document.getElementById('count').textContent=`(${objects.length})`;this.render();}
+  setRisks(events){
+    this.riskMap={};const ord={CRITICAL:4,HIGH:3,MEDIUM:2,LOW:1};
+    events.forEach(ev=>{const id=ev.sat1_norad;if(!this.riskMap[id]||(ord[ev.risk_level]||0)>(ord[this.riskMap[id]]||0))this.riskMap[id]=ev.risk_level;});
+    this.render();
+  }
+  visible(){
+    let list=this.filter==='ALL'?this.all:this.all.filter(o=>o.category===this.filter);
+    if(this.query){
+      const q=this.query;
+      list=list.filter(o=>
+        o.name.toLowerCase().includes(q) ||
+        String(o.norad_id).includes(q)
+      );
+    }
+    return list;
+  }
+  render(){
+    const list=document.getElementById('sat-list'),vis=this.visible();
+    if(!vis.length){list.innerHTML='<div style="padding:10px 12px;color:#333355;font-size:11px">Nesne yok</div>';return;}
+    const watchSet=window.app?window.app.watchSet:new Set();
+    list.innerHTML=vis.map(o=>{
+      const risk=this.riskMap[o.norad_id],isW=watchSet.has(o.norad_id);
+      return `<div class="si${isW?' watched':''}" data-id="${o.norad_id}">
+        <span class="sn">${o.name}</span>
+        <span class="sm">NORAD ${o.norad_id} · ${o.alt_km} km</span>
+        <span class="cb c-${o.category}">${CAT_LABEL[o.category]||o.category}</span>
+        ${risk?`<span class="cb risk-${risk}">${risk}</span>`:''}
+        <button class="watch-btn${isW?' active':''}" data-wid="${o.norad_id}" title="${isW?'Takipten çıkar':'Takibe al'}">${isW?'★':'☆'}</button>
+      </div>`;
+    }).join('');
+    list.querySelectorAll('.si').forEach(el=>el.addEventListener('click',e=>{
+      if(e.target.classList.contains('watch-btn'))return;
+      const obj=this.all.find(o=>o.norad_id===parseInt(el.dataset.id));
+      if(obj&&window.app)window.app.onSelect(obj);
+    }));
+    list.querySelectorAll('.watch-btn').forEach(btn=>btn.addEventListener('click',e=>{
+      e.stopPropagation();
+      if(window.app)window.app.toggleWatch(parseInt(btn.dataset.wid));
+    }));
+  }
+}
+
+// ── Watchlist Cards ──────────────────────────────────────────────────────────
+const watchData = {};  // noradId → {obj, threats, loading}
+
+function riskColor(level) {
+  return {CRITICAL:'#ff4444',HIGH:'#ff8800',MEDIUM:'#dddd00',LOW:'#44dd44'}[level]||'#888888';
+}
+
+function worstRisk(threats) {
+  const ord = {CRITICAL:4,HIGH:3,MEDIUM:2,LOW:1};
+  if (!threats||!threats.length) return null;
+  return threats.reduce((a,b)=>(ord[b.risk_level]||0)>(ord[a.risk_level]||0)?b:a).risk_level;
+}
+
+function maxScore(threats) {
+  if (!threats||!threats.length) return 0;
+  return Math.max(...threats.map(t=>t.danger_score||0));
+}
+
+function renderCards() {
+  const el = document.getElementById('wl-cards');
+  const ids = Object.keys(watchData).map(Number);
+  document.getElementById('wl-count').textContent = ids.length ? `(${ids.length})` : '';
+
+  if (!ids.length) {
+    el.innerHTML = '<div class="wl-empty">Sol listeden ☆ ile nesne ekleyin</div>';
+    return;
+  }
+
+  el.innerHTML = ids.map(id => {
+    const d = watchData[id];
+    const o = d.obj;
+    const threats = d.threats;
+    const loading = d.loading;
+    const risk = worstRisk(threats);
+    const score = maxScore(threats);
+    const top3 = threats ? threats.slice(0,3) : [];
+
+    const riskBadge = risk
+      ? `<span class="sc-risk-label risk-${risk}">${risk}</span>`
+      : `<span class="sc-risk-label" style="background:#111128;color:#444466">${loading?'Hesaplanıyor…':'Veri yok'}</span>`;
+
+    const threatRows = loading
+      ? `<div class="sc-loading">Tehditler analiz ediliyor…</div>`
+      : top3.length
+        ? top3.map(t=>`<div class="sc-threat-row">
+            <span class="sc-threat-name" title="${t.name}">${t.name}</span>
+            <span class="sc-threat-dist" style="color:${riskColor(t.risk_level)}">${t.miss_distance_km} km</span>
+          </div>`).join('')
+        : `<div class="sc-loading">Yakın tehdit tespit edilmedi</div>`;
+
+    return `<div class="sat-card" data-id="${id}">
+      <div class="sc-header">
+        <span class="sc-name">${o.name}</span>
+        <button class="sc-remove" data-rid="${id}" title="Takipten çıkar">✕</button>
+      </div>
+      <div class="sc-meta">NORAD ${id} · ${o.alt_km} km · ${CAT_LABEL[o.category]||o.category}</div>
+      <div class="sc-risk-bar">
+        ${riskBadge}
+        ${score>0?`<span class="sc-score">Tehlike: ${score.toFixed(1)}/100</span>`:''}
+      </div>
+      <div class="sc-threats-summary">${threatRows}</div>
+      ${!loading&&threats?`<div class="sc-click-hint">Detay için tıkla →</div>`:''}
+    </div>`;
+  }).join('');
+
+  // Events
+  el.querySelectorAll('.sc-remove').forEach(btn => btn.addEventListener('click', e => {
+    e.stopPropagation();
+    if (window.app) window.app.toggleWatch(parseInt(btn.dataset.rid));
+  }));
+  el.querySelectorAll('.sat-card').forEach(card => card.addEventListener('click', e => {
+    if (e.target.classList.contains('sc-remove')) return;
+    const id = parseInt(card.dataset.id);
+    const d = watchData[id];
+    if (d && d.threats) showPopup(d.obj, d.threats);
+  }));
+}
+
+// ── Popup ─────────────────────────────────────────────────────────────────────
+function showPopup(obj, threats) {
+  document.getElementById('popup-title').textContent = `⚠ ${obj.name} — Tehdit Analizi`;
+  const body = document.getElementById('popup-body');
+
+  if (!threats || !threats.length) {
+    body.innerHTML = '<div style="padding:12px;color:#555577;font-size:12px">Bu nesne için yakın tehdit tespit edilmedi.</div>';
+  } else {
+    const top = threats.slice(0, 10);
+    body.innerHTML = `
+      <div class="pt-section">
+        <h4>En Yakın ${top.length} Tehdit (7 Gün)</h4>
+        ${top.map(t => {
+          const tca = t.tca ? new Date(t.tca).toLocaleString('tr-TR') : '—';
+          const pc  = t.collision_prob ? t.collision_prob.toExponential(2) : '—';
+          const spd = t.rel_speed_km_s ? t.rel_speed_km_s.toFixed(2)+' km/s' : '—';
+          const eng = t.impact_energy_kj ? t.impact_energy_kj.toFixed(0)+' kJ' : '—';
+          const score = t.danger_score || 0;
+          const fillColor = riskColor(t.risk_level);
+          return `<div class="pt-card">
+            <div class="pt-card-header">
+              <span class="pt-name">${t.name}</span>
+              <span class="pt-badge risk-${t.risk_level}">${t.risk_level}</span>
+            </div>
+            <div class="pt-row"><span class="pt-label">Kategori</span><span class="pt-val">${CAT_LABEL[t.category]||t.category}</span></div>
+            <div class="pt-row"><span class="pt-label">Miss Distance</span><span class="pt-val" style="color:${fillColor}">${t.miss_distance_km} km</span></div>
+            <div class="pt-row"><span class="pt-label">Göreceli Hız</span><span class="pt-val">${spd}</span></div>
+            <div class="pt-row"><span class="pt-label">Yaklaşma Açısı</span><span class="pt-val">${t.approach_angle_deg||'—'}°</span></div>
+            <div class="pt-row"><span class="pt-label">Çarpışma Olasılığı</span><span class="pt-val">${pc}</span></div>
+            <div class="pt-row"><span class="pt-label">Çarpışma Enerjisi</span><span class="pt-val">${eng}</span></div>
+            <div class="pt-row"><span class="pt-label">TCA</span><span class="pt-val">${tca}</span></div>
+            <div class="pt-score-bar"><div class="pt-score-fill" style="width:${score}%;background:${fillColor}"></div></div>
+            <div style="font-size:9px;color:#555577;text-align:right;margin-top:2px">Tehlike Skoru: ${score.toFixed(1)}/100</div>
+          </div>`;
+        }).join('')}
+      </div>`;
+  }
+
+  document.getElementById('popup-overlay').classList.add('show');
+}
+
+document.getElementById('popup-close').addEventListener('click', () => {
+  document.getElementById('popup-overlay').classList.remove('show');
+});
+document.getElementById('popup-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('popup-overlay'))
+    document.getElementById('popup-overlay').classList.remove('show');
+});
+
+// ── Detail ───────────────────────────────────────────────────────────────────
+function showDetail(obj,extra={}){
+  const el=document.getElementById('dc');
+  if(!obj){el.innerHTML='<span style="color:#333355">Bir nesne seçin</span>';return;}
+  const r=(l,v)=>`<div class="dr"><span class="dl">${l}</span><span class="dv">${v}</span></div>`;
+  const info={...obj,...extra};
+  el.innerHTML=`
+    ${r('İsim',info.name||'—')}
+    ${r('NORAD ID',info.norad_id||'—')}
+    ${r('Kategori',CAT_LABEL[info.category]||info.category||'—')}
+    ${r('Yörünge',info.orbit_type||'—')}
+    ${r('İrtifa',info.altitude_km!=null?info.altitude_km.toFixed(0)+' km':info.alt_km!=null?info.alt_km+' km':'—')}
+    ${r('Periyot',info.period_min!=null?info.period_min.toFixed(1)+' dk':'—')}
+    ${r('İnklinasyon',info.inclination!=null?info.inclination.toFixed(2)+'°':'—')}
+    ${r('Enlem',info.lat!=null?info.lat.toFixed(2)+'°':'—')}
+    ${r('Boylam',info.lon!=null?info.lon.toFixed(2)+'°':'—')}
+  `;
+}
+
+// ── App ──────────────────────────────────────────────────────────────────────
+class App {
+  constructor(){
+    this.globe=new Globe(document.getElementById('cv'));
+    this.panel=new Panel();
+    this.catalog=[]; this.watchSet=new Set();
+    window.app=this; this._boot();
+  }
+  _status(msg){document.getElementById('statusbar').textContent=msg;}
+  async _boot(){
+    Terminal.init();
+    Terminal.info('Katalog yükleniyor…');
+    this._status('Katalog yükleniyor…');
+    const data=await apiFetch(`${BASE}/api/catalog/positions`,45000);
+    if(!data||!data.length){
+      Terminal.err('API bağlantısı yok — 5 dakika sonra tekrar denenecek');
+      this._statusWaiting();
+      return;
+    }
+    this._startCatalog(data);
+  }
+  _statusWaiting(){
+    let remaining=300;
+    this._status(`⏳ Veri yok — ${remaining}s sonra tekrar denenecek`);
+    Terminal.warn(`Bağlantı bekleniyor… 300s`);
+    const tick=setInterval(()=>{
+      remaining--;
+      this._status(`⏳ Veri yok — ${remaining}s sonra tekrar denenecek`);
+      if(remaining<=0){
+        clearInterval(tick);
+        Terminal.info('Yeniden bağlanılıyor…');
+        this._boot();
+      }
+    },1000);
+  }
+  _startCatalog(data){
+    this.catalog=data;
+    this.panel.setData(data);
+    this.globe.setObjects(data);
+    Terminal.info(`${data.length} nesne yüklendi`);
+    this._status(`${data.length} nesne yüklendi`);
+
+    // Restore watchlist from localStorage
+    const saved=_loadWatchlist();
+    if(saved.size){
+      Terminal.info(`Takip listesi geri yükleniyor: ${saved.size} nesne`);
+      for(const noradId of saved){
+        const obj=this.catalog.find(o=>o.norad_id===noradId)||{norad_id:noradId,name:'NORAD '+noradId,category:'other',alt_km:0};
+        this.watchSet.add(noradId);
+        watchData[noradId]={obj,threats:null,loading:true};
+        this._loadThreats(noradId);
+      }
+      this.globe.setWatchSet(this.watchSet);
+      this.globe.setObjects(this.catalog);
+      this.panel.render();
+      renderCards();
+    }
+
+    setInterval(()=>this._refresh(),60000);
+  }
+  _mock(){
+    const m=[
+      {norad_id:39522,name:'TURKSAT 4A',category:'turkish',lat:0,lon:42,alt_km:35786},
+      {norad_id:40984,name:'TURKSAT 4B',category:'turkish',lat:0,lon:50,alt_km:35786},
+      {norad_id:47949,name:'TURKSAT 5A',category:'turkish',lat:0,lon:31,alt_km:35786},
+      {norad_id:49382,name:'TURKSAT 5B',category:'turkish',lat:0,lon:58,alt_km:35786},
+      {norad_id:41875,name:'GOKTURK-1', category:'turkish',lat:45,lon:30,alt_km:695},
+      {norad_id:39030,name:'GOKTURK-2', category:'turkish',lat:-30,lon:80,alt_km:755},
+      {norad_id:25544,name:'ISS (ZARYA)',category:'stations',lat:20,lon:100,alt_km:408},
+    ];
+    this.catalog=m; this.panel.setData(m); this.globe.setObjects(m);
+    this._status('Mock veri (API yok)');
+  }
+  applyFilter(){
+    const vis=this.panel.visible(),ids=new Set(vis.map(o=>o.norad_id));
+    this.globe.applyFilter(ids);
+  }
+  async onSelect(obj){
+    showDetail(obj); this.globe.highlight(obj.norad_id);
+    const el=document.querySelector(`.si[data-id="${obj.norad_id}"]`);
+    if(el)el.scrollIntoView({block:'nearest'});
+
+    // Fly camera to satellite position
+    if(obj.lat!=null && obj.lon!=null){
+      this.globe.flyTo(obj.lat, obj.lon, obj.alt_km||400);
+      Terminal.calc(`Kamera → ${obj.name} (${obj.lat.toFixed(2)}°, ${obj.lon.toFixed(2)}°, ${obj.alt_km} km)`);
+    }
+
+    Terminal.info(`Seçildi: ${obj.name} [NORAD ${obj.norad_id}]`);
+
+    // Fetch satellite info and track in parallel
+    const [info, track] = await Promise.all([
+      apiFetch(`${BASE}/api/satellite/${obj.norad_id}`),
+      apiFetch(`${BASE}/api/satellite/${obj.norad_id}/track?minutes=90&step=30`, 25000),
+    ]);
+    if(info){
+      showDetail(obj, info);
+      Terminal.data(`  İrtifa: ${info.altitude_km?.toFixed(1)} km | Periyot: ${info.period_min?.toFixed(2)} dk | İnk: ${info.inclination?.toFixed(2)}°`);
+    }
+    if(track && track.length){
+      Terminal.calc(`  Yörünge: ${track.length} nokta, 90 dakika`);
+    }
+
+    // Draw real SGP4 ground track
+    this.globe.showOrbitFor(obj.norad_id, track||null);
+  }
+  toggleWatch(noradId){
+    if(this.watchSet.has(noradId)){
+      this.watchSet.delete(noradId);
+      delete watchData[noradId];
+      const name=this.catalog.find(o=>o.norad_id===noradId)?.name||'NORAD '+noradId;
+      Terminal.warn(`Takipten çıkarıldı: ${name}`);
+    } else {
+      this.watchSet.add(noradId);
+      const obj = this.catalog.find(o=>o.norad_id===noradId) || {norad_id:noradId,name:'NORAD '+noradId,category:'other',alt_km:0};
+      watchData[noradId] = {obj, threats:null, loading:true};
+      Terminal.info(`Takibe alındı: ${obj.name} [NORAD ${noradId}]`);
+      Terminal.calc(`  Tehdit analizi başlatılıyor…`);
+      renderCards();
+      this._loadThreats(noradId);
+    }
+    _saveWatchlist(this.watchSet);
+    this.globe.setWatchSet(this.watchSet);
+    this.globe.setObjects(this.catalog);
+    this.applyFilter();
+    this.panel.render();
+    renderCards();
+  }
+  async _loadThreats(noradId){
+    const data = await apiFetch(`${BASE}/api/threats/${noradId}`, 120000);
+    if (watchData[noradId]) {
+      watchData[noradId].threats = data || [];
+      watchData[noradId].loading = false;
+      const name=watchData[noradId].obj?.name||'NORAD '+noradId;
+      if(data && data.length){
+        Terminal.warn(`${name}: ${data.length} tehdit bulundu`);
+        data.slice(0,3).forEach(t=>Terminal.data(`  → ${t.name} | ${t.miss_distance_km} km | ${t.risk_level}`));
+      } else {
+        Terminal.info(`${name}: Yakın tehdit yok`);
+      }
+      renderCards();
+    }
+  }
+  async _refresh(){
+    this._status('Konumlar güncelleniyor…');
+    Terminal.calc(`Konum güncellemesi başlatıldı — ${new Date().toLocaleTimeString('tr-TR')}`);
+    const data=await apiFetch(`${BASE}/api/catalog/positions`,45000);
+    if(!data){
+      Terminal.err('Konum güncellemesi başarısız — 5dk sonra tekrar denenecek');
+      this._status('⏳ Güncelleme başarısız — bekleniyor…');
+      return; // setInterval will retry in 60s anyway
+    }
+    this.catalog=data; this.panel.setData(data);
+    this.globe.setObjects(data); this.applyFilter();
+    Terminal.info(`${data.length} nesne konumu güncellendi`);
+    this._status(`${data.length} nesne · ${new Date().toLocaleTimeString('tr-TR')}`);
+  }
+}
+
+window.addEventListener('load',()=>new App());
+</script>
+</body>
+</html>

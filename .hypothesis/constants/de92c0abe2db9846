@@ -1,0 +1,4 @@
+# file: C:\Users\YİĞİT\Desktop\PROJE\sgp4_engine.py
+# hypothesis_version: 6.151.9
+
+[1e-12, 1e-10, 6.2e-06, 0.093104, 60.0, 240.0, 298.257223563, 6378.137, 36525.0, 67310.54841, 398600.4418, 1000000.0, 2451545.0, 8640184.812866, 180, 360, 2000, 3600, 35000, 876600, '1', '1 ', '2', '2 ', 'GEO', 'LEO', 'MEO', 'alt_km', 'apogee_km', 'eci', 'inclination_deg', 'lat', 'lon', 'orbit_type', 'perigee_km', 'period_min', 'velocity', 'vx', 'vy', 'vz', 'x', 'y', 'z']

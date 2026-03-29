@@ -1,0 +1,4 @@
+# file: C:\Users\YİĞİT\Desktop\PROJE\routers\groups.py
+# hypothesis_version: 6.151.9
+
+[404, 500, 503, '/api/groups', '/{group}', '/{group}/count', 'active', 'amateur', 'argos', 'cosmos-1408-debris', 'cosmos-2251-debris', 'count', 'dmc', 'fengyun-1c-debris', 'geo', 'globalstar', 'goes', 'gorizont', 'group', 'groups', 'intelsat', 'iridium', 'iridium-33-debris', 'iridium-NEXT', 'json', 'molniya', 'noaa', 'oneweb', 'orbcomm', 'other-comm', 'planet', 'raduga', 'resource', 'sarsat', 'satnogs', 'ses', 'spire', 'starlink', 'stations', 'swarm', 'tdrss', 'visual', 'weather', 'x-comm']

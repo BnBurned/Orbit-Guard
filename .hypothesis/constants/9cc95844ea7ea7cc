@@ -1,0 +1,4 @@
+# file: C:\Users\YİĞİT\AppData\Roaming\Python\Python310\site-packages\sgp4\api.py
+# hypothesis_version: 6.151.9
+
+['SGP4_ERRORS', 'Satrec', 'SatrecArray', 'WGS72', 'WGS72OLD', 'WGS84', 'accelerated', 'days2mdhms', 'jday', 'nm is less than zero']

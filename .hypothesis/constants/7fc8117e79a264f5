@@ -1,0 +1,4 @@
+# file: C:\Users\YİĞİT\Desktop\PROJE\routers\satellite.py
+# hypothesis_version: 6.151.9
+
+[0.0, 2.0, 404, 422, 503, 2000, 35000, '+00:00', '/api/satellite', '/{catnr}', '/{catnr}/orbital', '/{catnr}/position', 'EPOCH', 'GEO', 'LEO', 'MEO', 'NORAD_CAT_ID', 'OBJECT_NAME', 'OTHER', 'TLE_LINE1', 'TLE_LINE2', 'UNKNOWN', 'Uydu bulunamadı.', 'Z', 'altitude_km', 'apogee_km', 'date', 'eccentricity', 'eci', 'epoch', 'geodetic', 'inclination', 'inclination_deg', 'line1', 'line2', 'name', 'norad_id', 'orbit_type', 'perigee_km', 'period_min', 'satellite', 'satelliteId', 'tle_line1', 'tle_line2', 'velocity', 'x', 'y', 'z']

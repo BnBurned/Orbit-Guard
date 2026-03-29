@@ -1,0 +1,4 @@
+# file: C:\Users\YİĞİT\Desktop\PROJE\routers\conjunction.py
+# hypothesis_version: 6.151.9
+
+[404, 503, '/api/conjunction', '/pair', '/turkish-satellites', 'Analiz süresi (gün)', 'CATNR', 'NORAD_CAT_ID', 'OBJECT_NAME', 'SATNAME', 'TLE_LINE1', 'TLE_LINE2', 'conjunction', 'cosmos-1408-debris', 'name', 'norad_id', 'tle_line1', 'tle_line2']

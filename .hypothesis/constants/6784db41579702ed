@@ -1,0 +1,4 @@
+# file: C:\Users\YİĞİT\Desktop\PROJE\conjunction.py
+# hypothesis_version: 6.151.9
+
+[1.0, 5.0, 10.0, 39522, 40895, 40984, 41785, 47720, 49336, 'CRITICAL', 'GEO', 'GOKTURK-1', 'GOKTURK-2', 'HIGH', 'LEO', 'LOW', 'MEDIUM', 'TURKSAT 4A', 'TURKSAT 4B', 'TURKSAT 5A', 'TURKSAT 5B', 'eci', 'inclination_deg', 'miss_distance_km', 'name', 'norad_id', 'orbit', 'risk_level', 'sat1_name', 'sat1_norad', 'sat2_name', 'sat2_norad', 'tca', 'tle_line1', 'tle_line2', 'x', 'y', 'z']

@@ -1,0 +1,149 @@
+╔════════════════════════════════════════════════════════════════╗
+║           OrbitGuard — Turkish Satellite Tracking              ║
+║                    QUICK START GUIDE                           ║
+╚════════════════════════════════════════════════════════════════╝
+
+WHAT IS ORBITGUARD?
+─────────────────────────────────────────────────────────────────
+Real-time 3D tracking of 6 Turkish satellites with collision risk
+analysis and webcam-based sky monitoring.
+
+SATELLITES TRACKED
+─────────────────────────────────────────────────────────────────
+GEO (Geostationary):
+  • TURKSAT 4A (NORAD 39522)
+  • TURKSAT 4B (NORAD 40984)
+  • TURKSAT 5A (NORAD 47720)
+  • TURKSAT 5B (NORAD 49336)
+
+LEO (Low Earth Orbit):
+  • GOKTURK-1 (NORAD 41785)
+  • GOKTURK-2 (NORAD 40895)
+
+HOW TO START
+─────────────────────────────────────────────────────────────────
+Windows:
+  1. Open Command Prompt
+  2. Navigate to OrbitGuard folder
+  3. Type: run.bat
+  4. Press Enter
+
+Linux/macOS:
+  1. Open Terminal
+  2. Navigate to OrbitGuard folder
+  3. Type: chmod +x run.sh
+  4. Type: ./run.sh
+  5. Press Enter
+
+WHAT HAPPENS
+─────────────────────────────────────────────────────────────────
+1. System checks dependencies
+2. Backend starts (port 8000)
+3. Camera service starts (port 8001)
+4. Browser opens with 3D Globe
+5. Satellites appear as colored dots
+6. Collision risks displayed
+7. Camera status shown
+
+HOW TO USE
+─────────────────────────────────────────────────────────────────
+LEFT PANEL (Satellite List):
+  • Click satellite to select
+  • Use filters: All / GEO / LEO
+  • See risk level badge
+
+CENTER (3D Globe):
+  • Drag mouse to rotate
+  • Scroll to zoom in/out
+  • Click satellite dot to select
+  • Colors: Blue=GEO, Green=LEO, White=Selected
+
+RIGHT PANEL (Details & Risks):
+  • Top: Selected satellite details
+  • Bottom: Conjunction risks sorted by severity
+  • CRITICAL (Red) < 1 km
+  • HIGH (Orange) < 5 km
+  • MEDIUM (Yellow) < 10 km
+  • LOW (Green) ≥ 10 km
+
+BOTTOM (Camera):
+  • Camera status (Active/Inactive)
+  • Ankara location (39.9°N, 32.8°E, 938m)
+  • Detection count
+  • MJPEG stream when active
+
+FEATURES
+─────────────────────────────────────────────────────────────────
+✓ Real-time satellite tracking
+✓ 3D interactive globe
+✓ Collision risk analysis
+✓ Webcam motion detection
+✓ Automatic data updates (30s)
+✓ Mock data fallback
+✓ Responsive UI
+✓ Dark theme
+
+PORTS
+─────────────────────────────────────────────────────────────────
+Backend API:     http://127.0.0.1:8000
+Camera Service:  http://127.0.0.1:8001
+Frontend:        http://127.0.0.1:8000
+
+TROUBLESHOOTING
+─────────────────────────────────────────────────────────────────
+No satellites visible?
+  → Check browser console (F12)
+  → Verify backend running
+  → Try refreshing page
+
+Collision risks empty?
+  → Mock data should show
+  → Check backend health: /health
+
+Camera not working?
+  → Check webcam permissions
+  → Verify camera service running
+  → Try mock data
+
+Port already in use?
+  → Windows: netstat -ano | findstr :8000
+  → Linux/Mac: lsof -i :8000
+  → Kill process and restart
+
+KEYBOARD SHORTCUTS
+─────────────────────────────────────────────────────────────────
+F12              Open browser console
+Ctrl+R           Refresh page
+Ctrl+Shift+I     Developer tools
+
+MOUSE CONTROLS
+─────────────────────────────────────────────────────────────────
+Left Drag        Rotate globe
+Scroll           Zoom in/out
+Click Dot        Select satellite
+
+DOCUMENTATION
+─────────────────────────────────────────────────────────────────
+WORKING_NOW.md       → Full feature guide
+FINAL_STATUS.md      → Complete status
+TROUBLESHOOTING.md   → Detailed troubleshooting
+SETUP.md             → Installation guide
+
+SUPPORT
+─────────────────────────────────────────────────────────────────
+Check setup:     python check_setup.py
+Run diagnostics: diagnose.bat (Windows) or ./diagnose.sh (Linux/Mac)
+View logs:       Check terminal windows
+
+NEXT STEPS
+─────────────────────────────────────────────────────────────────
+1. Start OrbitGuard (run.bat or ./run.sh)
+2. Open browser to http://127.0.0.1:8000
+3. Select a satellite from left panel
+4. View details and risks
+5. Monitor collision events
+6. Check camera status
+
+═══════════════════════════════════════════════════════════════════
+                    Ready to track satellites!
+═══════════════════════════════════════════════════════════════════
